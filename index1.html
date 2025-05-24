@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grammar Quiz</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+    }
+    .quiz-container {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      max-width: 800px;
+      margin: auto;
+    }
+    .question {
+      font-weight: bold;
+    }
+    .options label {
+      display: block;
+      margin-bottom: 8px;
+    }
+    .submit-btn, .next-btn {
+      margin-top: 20px;
+      padding: 10px 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .submit-btn:hover, .next-btn:hover {
+      background-color: #0056b3;
+    }
+    .result {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="quiz-container">
+    <div id="quiz"></div>
+    <button class="submit-btn" onclick="submitAnswer()">Submit</button>
+    <button class="next-btn" onclick="nextQuestion()" style="display:none">Next</button>
+    <div id="result" class="result"></div>
+  </div>
+
+  <script>
+    const questions = [
+      { question: "She __________ to the gym every morning.", options: ["go", "goes", "going", "gone"], answer: 1 },
+      { question: "If he __________ harder, he would have passed the exam.", options: ["studied", "studies", "had studied", "has studied"], answer: 2 },
+      { question: "I have never __________ a lion in real life.", options: ["saw", "seen", "see", "seeing"], answer: 1 },
+      { question: "Neither the teacher nor the students __________ happy about the decision.", options: ["is", "was", "are", "be"], answer: 2 },
+      { question: "A cup of tea __________ what I need right now.", options: ["are", "is", "were", "be"], answer: 1 },
+      { question: "They __________ in Addis Ababa since 2010.", options: ["live", "lived", "are living", "have lived"], answer: 3 },
+      { question: "My uncle, as well as my cousins, __________ coming to the party.", options: ["is", "are", "were", "have"], answer: 0 },
+      { question: "The book was __________ by the famous author.", options: ["writing", "wrote", "written", "write"], answer: 2 },
+      { question: "He said he __________ to the market.", options: ["go", "went", "goes", "gone"], answer: 1 },
+      { question: "You __________ finish your homework before watching TV.", options: ["might", "should", "can", "would"], answer: 1 },
+      { question: "The baby cried __________ she was hungry.", options: ["so", "because", "although", "but"], answer: 1 },
+      { question: "The manager asked whether the report __________ submitted.", options: ["has been", "was", "had been", "is"], answer: 2 },
+      { question: "He was accused __________ stealing the money.", options: ["on", "for", "of", "with"], answer: 2 },
+      { question: "She speaks English more fluently __________ her brother.", options: ["than", "as", "like", "then"], answer: 0 },
+      { question: "If it __________ tomorrow, we will cancel the trip.", options: ["rains", "rained", "will rain", "is raining"], answer: 0 },
+      { question: "I wish I __________ the answer.", options: ["know", "knew", "have known", "will know"], answer: 1 },
+      { question: "My shoes are dirty. I need to __________ them.", options: ["clean", "cleaned", "cleaning", "have cleaned"], answer: 0 },
+      { question: "The students __________ by the time the bell rang.", options: ["leave", "left", "had left", "have left"], answer: 2 },
+      { question: "He is one of the boys who __________ never absent.", options: ["was", "are", "is", "has"], answer: 1 },
+      { question: "Each of the students __________ a project.", options: ["have", "has", "having", "had"], answer: 1 },
+      { question: "By the time you arrive, we __________ dinner.", options: ["finish", "will finish", "will have finished", "finished"], answer: 2 },
+      { question: "A pair of scissors __________ on the table.", options: ["is", "are", "were", "be"], answer: 0 },
+      { question: "It is important that she __________ the meeting.", options: ["attends", "attend", "attended", "attending"], answer: 1 },
+      { question: "The man __________ car was stolen reported to the police.", options: ["which", "whose", "who", "whom"], answer: 1 },
+      { question: "Not only the players but also the coach __________ tired.", options: ["are", "is", "were", "be"], answer: 1 },
+      { question: "Let’s wait until he __________ his work.", options: ["finishes", "finished", "finish", "has finished"], answer: 0 },
+      { question: "I couldn’t open the door because I __________ my keys.", options: ["lost", "have lost", "had lost", "was losing"], answer: 2 },
+      { question: "She __________ her leg while playing football.", options: ["breaks", "broke", "has broken", "breaking"], answer: 1 },
+      { question: "There __________ many people in the room.", options: ["is", "are", "be", "being"], answer: 1 },
+      { question: "I will call you when he __________.", options: ["arrives", "arrived", "will arrive", "is arriving"], answer: 0 }
+    ];
+
+    let currentQuestion = 0;
+    let score = 0;
+
+    function loadQuestion() {
+      const q = questions[currentQuestion];
+      const quizDiv = document.getElementById('quiz');
+      quizDiv.innerHTML = `
+        <div class="question">${currentQuestion + 1}. ${q.question}</div>
+        <div class="options">
+          ${q.options.map((opt, i) => `
+            <label><input type="radio" name="option" value="${i}"> ${opt}</label>
+          `).join('')}
+        </div>
+      `;
+      document.getElementById('result').textContent = '';
+      document.querySelector('.next-btn').style.display = 'none';
+    }
+
+    function submitAnswer() {
+      const options = document.getElementsByName('option');
+      let selected;
+      for (let opt of options) {
+        if (opt.checked) {
+          selected = parseInt(opt.value);
+          break;
+        }
+      }
+      if (selected === undefined) {
+        alert('Please select an answer.');
+        return;
+      }
+      const correct = questions[currentQuestion].answer;
+      const resultDiv = document.getElementById('result');
+      if (selected === correct) {
+        resultDiv.textContent = 'Correct!';
+        score++;
+      } else {
+        resultDiv.textContent = `Wrong! Correct answer: ${questions[currentQuestion].options[correct]}`;
+      }
+      document.querySelector('.next-btn').style.display = 'inline-block';
+      document.querySelector('.submit-btn').style.display = 'none';
+    }
+
+    function nextQuestion() {
+      currentQuestion++;
+      if (currentQuestion < questions.length) {
+        loadQuestion();
+        document.querySelector('.submit-btn').style.display = 'inline-block';
+      } else {
+        document.getElementById('quiz').innerHTML = `<div class="question">Quiz Complete!</div>`;
+        document.getElementById('result').textContent = `Your score: ${score} out of ${questions.length}`;
+        document.querySelector('.next-btn').style.display = 'none';
+      }
+    }
+
+    loadQuestion();
+  </script>
+</body>
+</html>
