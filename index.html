@@ -26,7 +26,7 @@
       display: block;
       margin-bottom: 8px;
     }
-    .submit-btn, .next-btn {
+    .submit-btn, .next-btn, .prev-btn {
       margin-top: 20px;
       padding: 10px 15px;
       background-color: #007bff;
@@ -34,8 +34,9 @@
       border: none;
       border-radius: 4px;
       cursor: pointer;
+      margin-right: 10px;
     }
-    .submit-btn:hover, .next-btn:hover {
+    .submit-btn:hover, .next-btn:hover, .prev-btn:hover {
       background-color: #0056b3;
     }
     .result {
@@ -47,12 +48,13 @@
 <body>
   <div class="quiz-container">
     <div id="quiz"></div>
+    <button class="prev-btn" onclick="prevQuestion()" style="display:none">Previous</button>
     <button class="submit-btn" onclick="submitAnswer()">Submit</button>
     <button class="next-btn" onclick="nextQuestion()" style="display:none">Next</button>
     <div id="result" class="result"></div>
   </div>
 
-  <script>
+<script>
     const questions = [
       { question: "She __________ to the gym every morning.", options: ["go", "goes", "going", "gone"], answer: 1 },
       { question: "If he __________ harder, he would have passed the exam.", options: ["studied", "studies", "had studied", "has studied"], answer: 2 },
@@ -87,61 +89,193 @@
     ];
 
     let currentQuestion = 0;
-    let score = 0;
+    let userAnswers = new Array(questions.length).fill(null);
+    const quizElement = document.getElementById('quiz');
+    const resultElement = document.getElementById('result');
+    const prevButton = document.querySelector('.prev-btn');
+    const nextButton = document.querySelector('.next-btn');
+    const submitButton = document.querySelector('.submit-btn');
 
-    function loadQuestion() {
-      const q = questions[currentQuestion];
-      const quizDiv = document.getElementById('quiz');
-      quizDiv.innerHTML = `
-        <div class="question">${currentQuestion + 1}. ${q.question}</div>
-        <div class="options">
-          ${q.options.map((opt, i) => `
-            <label><input type="radio" name="option" value="${i}"> ${opt}</label>
-          `).join('')}
-        </div>
+    function displayQuestion() {
+      const question = questions[currentQuestion];
+      const optionsHtml = question.options.map((option, index) => `
+        <label>
+          <input type="radio" name="option" value="${index}" 
+            ${userAnswers[currentQuestion] === index ? 'checked' : ''}>
+          ${option}
+        </label>
+      `).join('');
+
+      quizElement.innerHTML = `
+        <div class="question">${currentQuestion + 1}. ${question.question}</div>
+        <div class="options">${optionsHtml}</div>
       `;
-      document.getElementById('result').textContent = '';
-      document.querySelector('.next-btn').style.display = 'none';
-    }
 
-    function submitAnswer() {
-      const options = document.getElementsByName('option');
-      let selected;
-      for (let opt of options) {
-        if (opt.checked) {
-          selected = parseInt(opt.value);
-          break;
-        }
-      }
-      if (selected === undefined) {
-        alert('Please select an answer.');
-        return;
-      }
-      const correct = questions[currentQuestion].answer;
-      const resultDiv = document.getElementById('result');
-      if (selected === correct) {
-        resultDiv.textContent = 'Correct!';
-        score++;
-      } else {
-        resultDiv.textContent = `Wrong! Correct answer: ${questions[currentQuestion].options[correct]}`;
-      }
-      document.querySelector('.next-btn').style.display = 'inline-block';
-      document.querySelector('.submit-btn').style.display = 'none';
+      prevButton.style.display = currentQuestion === 0 ? 'none' : 'inline-block';
+      nextButton.style.display = currentQuestion === questions.length - 1 ? 'none' : 'inline-block';
+      submitButton.style.display = currentQuestion === questions.length - 1 ? 'inline-block' : 'none';
+
+      quizElement.querySelectorAll('input[type="radio"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+          userAnswers[currentQuestion] = parseInt(e.target.value);
+        });
+      });
     }
 
     function nextQuestion() {
-      currentQuestion++;
-      if (currentQuestion < questions.length) {
-        loadQuestion();
-        document.querySelector('.submit-btn').style.display = 'inline-block';
-      } else {
-        document.getElementById('quiz').innerHTML = `<div class="question">Quiz Complete!</div>`;
-        document.getElementById('result').textContent = `Your score: ${score} out of ${questions.length}`;
-        document.querySelector('.next-btn').style.display = 'none';
+      if (currentQuestion < questions.length - 1) {
+        currentQuestion++;
+        displayQuestion();
       }
     }
 
-    loadQuestion();
-  </script>
+    function prevQuestion() {
+      if (currentQuestion > 0) {
+        currentQuestion--;
+        displayQuestion();
+      }
+    }
+
+    function submitAnswer() {
+      const unansweredIndex = userAnswers.findIndex(answer => answer === null);
+      if (unansweredIndex !== -1) {
+        alert('Please answer all questions before submitting.');
+        currentQuestion = unansweredIndex;
+        displayQuestion();
+        return;
+      }
+
+      const score = userAnswers.reduce(
+        (acc, answer, index) => acc + (answer === questions[index].answer ? 1 : 0),
+        0
+      );
+      resultElement.textContent = `Your score: ${score}/${questions.length}`;
+    }
+
+    displayQuestion();
+</script>
+<script>
+    // ... (keep the questions array and variable declarations same as before)
+
+    let isSubmitted = false; // Add submission state tracker
+
+    function displayQuestion() {
+      const question = questions[currentQuestion];
+      let optionsHtml = '';
+
+      if (isSubmitted) {
+        // Show answers with color coding
+        optionsHtml = question.options.map((option, index) => {
+          let style = '';
+          if (index === question.answer) {
+            style = 'background-color: #d4edda;'; // Green for correct answer
+          } else if (index === userAnswers[currentQuestion] && index !== question.answer) {
+            style = 'background-color: #f8d7da;'; // Red for wrong user answer
+          }
+          return `
+            <div style="padding: 5px; margin: 2px; ${style}">
+              <input type="radio" disabled 
+                ${userAnswers[currentQuestion] === index ? 'checked' : ''}>
+              ${option}
+            </div>
+          `;
+        }).join('');
+      } else {
+        // Normal question display
+        optionsHtml = question.options.map((option, index) => `
+          <label>
+            <input type="radio" name="option" value="${index}" 
+              ${userAnswers[currentQuestion] === index ? 'checked' : ''}>
+            ${option}
+          </label>
+        `).join('');
+      }
+
+      quizElement.innerHTML = `
+        <div class="question">${currentQuestion + 1}. ${question.question}</div>
+        <div class="options">${optionsHtml}</div>
+      `;
+
+      // Update button visibility
+      prevButton.style.display = currentQuestion === 0 ? 'none' : 'inline-block';
+      nextButton.style.display = (currentQuestion === questions.length - 1 && !isSubmitted) ? 'none' : 'inline-block';
+      submitButton.style.display = (currentQuestion === questions.length - 1 && !isSubmitted) ? 'inline-block' : 'none';
+      
+      if (isSubmitted) {
+        nextButton.style.display = currentQuestion === questions.length - 1 ? 'none' : 'inline-block';
+        prevButton.style.display = currentQuestion === 0 ? 'none' : 'inline-block';
+        quizElement.querySelectorAll('input').forEach(input => input.disabled = true);
+      }
+
+      // Add radio button listeners only if not submitted
+      if (!isSubmitted) {
+        quizElement.querySelectorAll('input[type="radio"]').forEach(radio => {
+          radio.addEventListener('change', (e) => {
+            userAnswers[currentQuestion] = parseInt(e.target.value);
+          });
+        });
+      }
+    }
+
+    function submitAnswer() {
+      const unansweredIndex = userAnswers.findIndex(answer => answer === null);
+      if (unansweredIndex !== -1) {
+        alert('Please answer all questions before submitting.');
+        currentQuestion = unansweredIndex;
+        displayQuestion();
+        return;
+      }
+
+      isSubmitted = true; // Set submission state
+      const score = userAnswers.reduce(
+        (acc, answer, index) => acc + (answer === questions[index].answer ? 1 : 0),
+        0
+      );
+      resultElement.textContent = `Your score: ${score}/${questions.length}`;
+      currentQuestion = 0; // Reset to first question
+      displayQuestion();
+    }
+
+    // Add restart functionality
+    function restartQuiz() {
+      isSubmitted = false;
+      userAnswers = new Array(questions.length).fill(null);
+      currentQuestion = 0;
+      resultElement.textContent = '';
+      displayQuestion();
+    }
+
+    // Update the submit button to show restart option
+    function checkSubmissionState() {
+      if (isSubmitted) {
+        submitButton.textContent = 'Restart Quiz';
+        submitButton.onclick = restartQuiz;
+      } else {
+        submitButton.textContent = 'Submit';
+        submitButton.onclick = submitAnswer;
+      }
+    }
+
+    // Modify existing functions to check state
+    function nextQuestion() {
+      if (currentQuestion < questions.length - 1) {
+        currentQuestion++;
+        displayQuestion();
+      }
+      checkSubmissionState();
+    }
+
+    function prevQuestion() {
+      if (currentQuestion > 0) {
+        currentQuestion--;
+        displayQuestion();
+      }
+      checkSubmissionState();
+    }
+
+    // Initialize
+    displayQuestion();
+    checkSubmissionState();
+</script>
 </body>
 </html>
